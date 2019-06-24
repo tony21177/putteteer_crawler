@@ -103,7 +103,7 @@ function print_error(flag){
     //await page.setViewport({width:1920,height:1048});
     // page.on('console', msg => console.log('PAGE LOG:', msg.text()));
     console.log("before navigate...");
-    const crawler_url = 'https://'+flags.ip+'/'+reportApiUrl+'/'+flags.file+'?'+flags.index+'&'+
+    const crawler_url = 'https://'+flags.ip+'/'+reportApiUrl+'/'+flags.file+'?'+'index='+flags.index+'&'+
     "_g=(time:(from:'"+flags.from_datetime+"',mode:absolute,to:'"+flags.to_datetime+"'))"+'&title='+flags.title;
     console.log(crawler_url);
     await page.goto( crawler_url , {waitUntil: 'networkidle2'});
