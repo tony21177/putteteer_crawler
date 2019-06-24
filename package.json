@@ -1,0 +1,16 @@
+{
+  "name": "scrawl",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  },
+  "author": "Kun",
+  "license": "ISC",
+  "dependencies": {
+    "dedent": "^0.7.0",
+    "getopts": "^2.2.4",
+    "puppeteer": "^1.17.0"
+  }
+}
