@@ -104,7 +104,7 @@ function print_error(flag){
     // page.on('console', msg => console.log('PAGE LOG:', msg.text()));
     console.log("before navigate...");
     const crawler_url = 'https://'+flags.ip+'/'+reportApiUrl+'/'+flags.file+'?'+'index='+flags.index+'&'+
-    "from_date="+flags.from_datetime+"to_date="+flags.to_datetime+'&title='+flags.title;
+    "from_date="+flags.from_datetime+"&to_date="+flags.to_datetime+'&title='+flags.title;
     console.log(crawler_url);
     await page.goto( crawler_url , {waitUntil: 'networkidle2'});
     // log in
