@@ -11,6 +11,7 @@ const reportApiUrl = 'report/template';
 const unknownFlags = [];
 const flags = getopts(process.argv.slice(2), {
   alias: {
+    ip:['ip'],
     file: ['file'],
     index: ['index'],
     from_datetime:['from'],
@@ -35,7 +36,9 @@ if (unknownFlags.length && !flags.help) {
 if(process.argv.slice(2).length===0){
   print_error();
 }
-
+if(!flags.ip){
+  print_error("--ip")
+}
 if(!flags.file){
   print_error("--file")
 }
@@ -64,6 +67,7 @@ function print_error(flag){
         {red need }{blue ${flag}} {red argument}
   
         options:
+          --ip                     {dim kibana report server ip}
           --file                   {dim report template file name e.g. template1.html}
           --index                  {dim kibana dashboard id}
           --from                   {dim kibana from date e.g. 2019-06-24T03:39:54.907Z}
@@ -75,7 +79,7 @@ function print_error(flag){
     console.log(
       dedent(chalk`
   
-      example: node index.js --file=template1.html --index=c25973a0-90ea-11e9-af50-bd7e20ca8913 --from=2019-06-24T03:39:54.907Z --to=2019-06-24T03:54:54.907Z --title=deepvisible
+      example: node index.js --ip=192.168.28.152 --file=template1.html --index=c25973a0-90ea-11e9-af50-bd7e20ca8913 --from=2019-06-24T03:39:54.907Z --to=2019-06-24T03:54:54.907Z --title=deepvisible
   
       options:
       -f or -file             {dim report template file name e.g. template1.html}
@@ -99,7 +103,7 @@ function print_error(flag){
     //await page.setViewport({width:1920,height:1048});
     // page.on('console', msg => console.log('PAGE LOG:', msg.text()));
     console.log("before navigate...");
-    const crawler_url = 'https://localhost/'+reportApiUrl+'/'+flags.file+'?'+flags.index+'&'+
+    const crawler_url = 'https://'+flags.ip+'/'+reportApiUrl+'/'+flags.file+'?'+flags.index+'&'+
     "_g=(time:(from:'"+flags.from_datetime+"',mode:absolute,to:'"+flags.to_datetime+"'))"+'&title='+flags.title;
     console.log(crawler_url);
     await page.goto( crawler_url , {waitUntil: 'networkidle2'});
