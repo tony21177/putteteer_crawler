@@ -16,7 +16,8 @@ const flags = getopts(process.argv.slice(2), {
     index: ['index'],
     from_datetime:['from'],
     to_datetime:['to'],
-    title:['title']
+    title:['title'],
+    path:['out-path']
   },
   // string: ["file","index","from","to","title"],
   default: {
@@ -54,6 +55,10 @@ if(!flags.to_datetime){
 if(!flags.title){
   print_error("--title")
 }
+if(!flags.title){
+  print_error("--out-path")
+}
+
 
 if (flags.help) {
   print_error();
@@ -79,7 +84,7 @@ function print_error(flag){
     console.log(
       dedent(chalk`
   
-      example: node index.js --ip=192.168.28.152 --file=template1.html --index=c25973a0-90ea-11e9-af50-bd7e20ca8913 --from=2019-06-24T03:39:54.907Z --to=2019-06-24T03:54:54.907Z --title=deepvisible
+      example: node index.js --ip=192.168.28.152 --file=template1.html --index=c25973a0-90ea-11e9-af50-bd7e20ca8913 --from=2019-06-24T03:39:54.907Z --to=2019-06-24T03:54:54.907Z --title=deepvisible --out-path=test2.pdf
   
       options:
       -f or -file             {dim report template file name e.g. template1.html}
@@ -100,7 +105,7 @@ function print_error(flag){
     const browser = await puppeteer.launch({args:['--no-sandbox','--ignore-certificate-errors','--remote-debugging-port=9222']});
     const page = await browser.newPage();
     page.setDefaultTimeout(15000);
-    //await page.setViewport({width:1920,height:1048});
+    // await page.setViewport({width:1903,height:1393});
     // page.on('console', msg => console.log('PAGE LOG:', msg.text()));
     console.log("before navigate...");
     const crawler_url = 'https://'+flags.ip+'/'+reportApiUrl+'/'+flags.file+'?'+'index='+flags.index+'&'+
@@ -137,13 +142,14 @@ function print_error(flag){
     await waitForAjaxRequest(page);
     console.log("Promise.race() has been resolved");
     await page.waitFor(durationAfterFirstAjaxResponse);
-    await page.pdf({path: 'test.pdf', format: 'A4'});
+    await page.pdf({path: flags.path, format: 'A4'});
     console.log("pdf has already been printed out");
     await browser.close();
     console.log("Headless browser has already been closed");
+    process.exit(0);
   }catch(e){
     console.log(e);
-    return;
+    process.exit(1);
   }
 })();
 
