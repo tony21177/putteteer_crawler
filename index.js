@@ -93,6 +93,7 @@ function print_error(flag){
       -from                   {dim kibana from date e.g. 2019-06-24T03:39:54.907Z}
       -to                     {dim kibana from date e.g. 2019-06-24T03:54:54.907Z}
       -title                  {dim report title e.g. deepvisible}
+      --out-path              {dim output relative path }
       `) + '\n'
     );
   }
