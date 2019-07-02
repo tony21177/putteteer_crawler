@@ -151,6 +151,7 @@ function print_error(flag){
     process.exit(0);
   }catch(e){
     console.log(e);
+    await browser.close();
     process.exit(1);
   }
 })();
