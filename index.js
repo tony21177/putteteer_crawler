@@ -104,7 +104,8 @@ function print_error(flag){
 
 (async () => {
   try{
-    const browser = await puppeteer.launch({args:['--no-sandbox','--ignore-certificate-errors','--remote-debugging-port=9222'],timeout:60000});
+    const browser = await puppeteer.launch({args:['--no-sandbox','--ignore-certificate-errors'],timeout:30000});
+    console.log("-------------------launch--broser-------------------------");
     const page = await browser.newPage();
     page.setDefaultTimeout(15000);
     // await page.setViewport({width:1903,height:1393});
