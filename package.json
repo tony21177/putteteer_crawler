@@ -13,5 +13,8 @@
     "dedent": "^0.7.0",
     "getopts": "^2.2.4",
     "puppeteer": "^1.17.0"
+  },
+  "devDependencies": {
+    "pending-xhr-puppeteer": "^2.0.0"
   }
 }

@@ -3,9 +3,10 @@ const getopts = require('getopts');
 const dedent = require('dedent');
 const chalk = require('chalk'); 
 const puppeteer = require('puppeteer');
+const { PendingXHR } = require('pending-xhr-puppeteer');
 
 const maxTimeourtForIframeRender = 60000;
-const durationAfterFirstAjaxResponse = 2000;
+const renderTime = 2000;
 const reportApiUrl = 'report/template';
 
 const unknownFlags = [];
@@ -19,7 +20,6 @@ const flags = getopts(process.argv.slice(2), {
     title:['title'],
     path:['out-path']
   },
-  // string: ["file","index","from","to","title"],
   default: {
     debug: true
   },
@@ -104,16 +104,15 @@ function print_error(flag){
 
 (async () => {
   try{
-    const browser = await puppeteer.launch({args:['--no-sandbox','--ignore-certificate-errors'],timeout:30000});
+    const browser = await puppeteer.launch({headless:true,args:['--no-sandbox','--ignore-certificate-errors'],timeout:30000});
     console.log("-------------------launch--broser-------------------------");
     const page = await browser.newPage();
+
     page.setDefaultTimeout(15000);
-    // await page.setViewport({width:1903,height:1393});
     // page.on('console', msg => console.log('PAGE LOG:', msg.text()));
     console.log("before navigate...");
     const crawler_url = 'https://'+flags.ip+'/'+reportApiUrl+'/'+flags.file+'?'+'index='+flags.index+'&'+
     "from_date="+flags.from_datetime+"&to_date="+flags.to_datetime+'&title='+flags.title;
-    console.log(crawler_url);
     await page.goto( crawler_url , {waitUntil: 'networkidle2'});
     // log in
     console.log(crawler_url);
@@ -124,7 +123,7 @@ function print_error(flag){
  
 
     const [response] = await Promise.all([
-      page.waitForNavigation(), // The promise resolves after navigation has finished
+      page.waitForNavigation("networkidle0"), // The promise resolves after navigation has finished
       page.click('button'), // Clicking the link will indirectly cause a navigation
     ]);
     console.log('login in...........');
@@ -138,13 +137,15 @@ function print_error(flag){
     let iframe = frames[1]
     console.log("iframe id:"+iframe._name); 
     
-    iframe.waitForNavigation({waitUntil: 'networkidle2'});
+
     await iframe.waitForSelector('.dshDashboardViewport-withMargins')
     
 
     await waitForAjaxRequest(page);
     console.log("Promise.race() has been resolved");
-    await page.waitFor(durationAfterFirstAjaxResponse);
+
+
+    await page.waitFor(renderTime);
     await page.pdf({path: flags.path, format: 'A4'});
     console.log("pdf has already been printed out");
     await browser.close();
@@ -158,29 +159,27 @@ function print_error(flag){
 })();
 
 var waitForAjaxRequest = (page)=>{
-  return Promise.race([iframeRenderMaxTimeout(maxTimeourtForIframeRender).timeoutPromise,ajaxRequestFinished()]);
-  // var p1 = iframeRenderMaxTimeout(maxTimeourtForIframeRender).timeoutPromise;
-  // var p2 = ajaxRequestFinished();
-  // var pAll = Promise.race([p1,p2]);
-  // console.log(p1)
-  // console.log(p2)
-  // console.log(pAll)
-  // return pAll
+  // return Promise.race([iframeRenderMaxTimeout(maxTimeourtForIframeRender).timeoutPromise,ajaxRequestFinished()]);
+  return Promise.race([iframeRenderMaxTimeout(maxTimeourtForIframeRender).timeoutPromise,ajaxForESData()]);
 
-  
-  //some ajax promise
-  function ajaxRequestFinished(){
-    return new Promise(function(resolve,reject){
-      console.log("register ajax requestfinished event")
-      page.once('requestfinished', function(){
-        console.log("one ajax request finished")
-        resolve();
-        //need to clear the timer,or the program will only terminate until all timer or IO all finished
-        clearTimeout(timeoutObj);
+
+  //proxy ajax for msearch elasticsearch request
+  function ajaxForESData(){
+    return new Promise((resolve,reject)=>{
+      const pendingXHR = new PendingXHR(page);
+      page.on('request', async (request) => {
+        if (request.resourceType() === 'xhr'&& request.url().includes('msearch')) {
+          console.log(pendingXHR.pendingXhrCount());
+          console.log(request.url());
+          await page.waitForResponse(response => response.url().includes('msearch'));
+          await pendingXHR.waitForAllXhrFinished();
+          resolve();
+        }
       });
-    });
+    })
     
-  } 
+  }
+
   //timeout promise
   var timeoutObj;
   function iframeRenderMaxTimeout(delay){
