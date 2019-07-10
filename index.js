@@ -151,7 +151,6 @@ function print_error(flag){
   }catch(e){
     console.log("catch----")
     console.log(e);
-    await browser.close();
     process.exit(1);
   }
 })();
