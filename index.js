@@ -136,14 +136,11 @@ function print_error(flag){
     let mainFrame = frames[0];
     let iframe = frames[1]
     console.log("iframe id:"+iframe._name); 
-    
 
     await iframe.waitForSelector('.dshDashboardViewport-withMargins')
-    
 
     await waitForAjaxRequest(page);
     console.log("Promise.race() has been resolved");
-
 
     await page.waitFor(renderTime);
     await page.pdf({path: flags.path, format: 'A4'});
@@ -152,6 +149,7 @@ function print_error(flag){
     console.log("Headless browser has already been closed");
     process.exit(0);
   }catch(e){
+    console.log("catch----")
     console.log(e);
     await browser.close();
     process.exit(1);
@@ -159,9 +157,7 @@ function print_error(flag){
 })();
 
 var waitForAjaxRequest = (page)=>{
-  // return Promise.race([iframeRenderMaxTimeout(maxTimeourtForIframeRender).timeoutPromise,ajaxRequestFinished()]);
   return Promise.race([iframeRenderMaxTimeout(maxTimeourtForIframeRender).timeoutPromise,ajaxForESData()]);
-
 
   //proxy ajax for msearch elasticsearch request
   function ajaxForESData(){
@@ -186,7 +182,7 @@ var waitForAjaxRequest = (page)=>{
     var timeoutPromise = new Promise( (resolve,reject)=>{
       timeoutObj=setTimeout( ()=>{
                               console.log("no ajax request finished for "+delay/1000+"s");
-                              reject( "Timeout!" );
+                              resolve( "Timeout!" );
                             }, delay );
       
       } );
