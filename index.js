@@ -166,7 +166,7 @@ var waitForAjaxRequest = (page)=>{
         if (request.resourceType() === 'xhr'&& request.url().includes('msearch')) {
           console.log(pendingXHR.pendingXhrCount());
           console.log(request.url());
-          await page.waitForResponse(response => response.url().includes('msearch'));
+          await page.waitForResponse(response => response.url().includes('msearch'),{timeout:60000});
           await pendingXHR.waitForAllXhrFinished();
           resolve();
         }
