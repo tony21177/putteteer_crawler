@@ -14,10 +14,10 @@ const flags = getopts(process.argv.slice(2), {
   alias: {
     ip:['ip'],
     file: ['file'],
-    index: ['index'],
+    // index: ['index'],
     from_datetime:['from'],
     to_datetime:['to'],
-    title:['title'],
+    // title:['title'],
     path:['out-path']
   },
   default: {
@@ -43,18 +43,18 @@ if(!flags.ip){
 if(!flags.file){
   print_error("--file")
 }
-if(!flags.index){
-  print_error("--index")
-}
+// if(!flags.index){
+//   print_error("--index")
+// }
 if(!flags.from_datetime){
   print_error("--from")
 }
 if(!flags.to_datetime){
   print_error("--to")
 }
-if(!flags.title){
-  print_error("--title")
-}
+// if(!flags.title){
+//   print_error("--title")
+// }
 if(!flags.title){
   print_error("--out-path")
 }
@@ -74,10 +74,8 @@ function print_error(flag){
         options:
           --ip                     {dim kibana report server ip}
           --file                   {dim report template file name e.g. template1.html}
-          --index                  {dim kibana dashboard id}
           --from                   {dim kibana from date e.g. 2019-06-24T03:39:54.907Z}
           --to                     {dim kibana from date e.g. 2019-06-24T03:54:54.907Z}
-          --title                  {dim report title e.g. deepvisible}
           --out-path               {dim output relative path }
       `) + '\n'
     );
@@ -85,14 +83,12 @@ function print_error(flag){
     console.log(
       dedent(chalk`
   
-      example: node index.js --ip=192.168.28.152 --file=template1.html --index=c25973a0-90ea-11e9-af50-bd7e20ca8913 --from=2019-06-24T03:39:54.907Z --to=2019-06-24T03:54:54.907Z --title=deepvisible --out-path=test2.pdf
+      example: node index.js --ip=192.168.28.152 --file=template1.html --from=2019-06-24T03:39:54.907Z --to=2019-06-24T03:54:54.907Z --out-path=test2.pdf
   
       options:
       -f or -file             {dim report template file name e.g. template1.html}
-      -i or -index            {dim kibana dashboard id}
       -from                   {dim kibana from date e.g. 2019-06-24T03:39:54.907Z}
       -to                     {dim kibana from date e.g. 2019-06-24T03:54:54.907Z}
-      -title                  {dim report title e.g. deepvisible}
       --out-path              {dim output relative path }
       `) + '\n'
     );
