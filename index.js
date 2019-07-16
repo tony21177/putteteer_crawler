@@ -101,7 +101,7 @@ function print_error(flag){
   process.exit(1);
 }
 
-
+var timeoutObj;
 (async () => {
   try{
     const browser = await puppeteer.launch({headless:true,args:['--no-sandbox','--ignore-certificate-errors'],timeout:30000});
@@ -138,11 +138,29 @@ function print_error(flag){
     console.log("iframe id:"+iframe._name); 
 
     await iframe.waitForSelector('.dshDashboardViewport-withMargins')
+    
 
     await waitForAjaxRequest(page);
     console.log("Promise.race() has been resolved");
 
+    
+
     await page.waitFor(renderTime);
+
+    let filterHandle = await iframe.$('.filter-bar.filter-panel');
+    if(filterHandle){
+      console.log("has filter element")
+       await iframe.evaluate(()=>{
+        //the document is for iframe in browser context
+        //this is in sandbox,so console will not print out directly,need to open line 112 or check in browser dev tool
+        let filters = document.querySelectorAll('.filter-bar.filter-panel');
+        for(let filter of filters){
+          console.log(filter)
+          filter.style.display = 'none'
+        }
+      })
+
+    }
     await page.pdf({path: flags.path, format: 'A4'});
     console.log("pdf has already been printed out");
     await browser.close();
@@ -169,6 +187,7 @@ var waitForAjaxRequest = (page)=>{
           await page.waitForResponse(response => response.url().includes('msearch'),{timeout:60000});
           await pendingXHR.waitForAllXhrFinished();
           resolve();
+          
         }
       });
     })
@@ -176,7 +195,7 @@ var waitForAjaxRequest = (page)=>{
   }
 
   //timeout promise
-  var timeoutObj;
+  
   function iframeRenderMaxTimeout(delay){
     var timeoutPromise = new Promise( (resolve,reject)=>{
       timeoutObj=setTimeout( ()=>{
