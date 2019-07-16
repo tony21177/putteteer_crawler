@@ -103,10 +103,11 @@ function print_error(flag){
 
 var timeoutObj;
 (async () => {
+  var page;
   try{
     const browser = await puppeteer.launch({headless:true,args:['--no-sandbox','--ignore-certificate-errors'],timeout:30000});
     console.log("-------------------launch--broser-------------------------");
-    const page = await browser.newPage();
+    page = await browser.newPage();
 
     page.setDefaultTimeout(15000);
     // page.on('console', msg => console.log('PAGE LOG:', msg.text()));
@@ -169,6 +170,7 @@ var timeoutObj;
   }catch(e){
     console.log("catch----")
     console.log(e);
+    await page.pdf({path: flags.path, format: 'A4'});
     process.exit(1);
   }
 })();
@@ -200,7 +202,7 @@ var waitForAjaxRequest = (page)=>{
     var timeoutPromise = new Promise( (resolve,reject)=>{
       timeoutObj=setTimeout( ()=>{
                               console.log("no ajax request finished for "+delay/1000+"s");
-                              resolve( "Timeout!" );
+                              reject( "no ajax request finished for "+delay/1000+"s" );
                             }, delay );
       
       } );
