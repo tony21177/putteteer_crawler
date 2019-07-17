@@ -8,11 +8,12 @@ const { PendingXHR } = require('pending-xhr-puppeteer');
 const maxTimeourtForIframeRender = 60000;
 const renderTime = 2000;
 const reportApiUrl = 'report/template';
+const iframeName = 'Dashboard';
 
 const unknownFlags = [];
 const flags = getopts(process.argv.slice(2), {
   alias: {
-    ip:['ip'],
+    domain:['domain'],
     file: ['file'],
     // index: ['index'],
     from_datetime:['from'],
@@ -37,8 +38,8 @@ if (unknownFlags.length && !flags.help) {
 if(process.argv.slice(2).length===0){
   print_error();
 }
-if(!flags.ip){
-  print_error("--ip")
+if(!flags.domain){
+  print_error("--domain")
 }
 if(!flags.file){
   print_error("--file")
@@ -55,7 +56,7 @@ if(!flags.to_datetime){
 // if(!flags.title){
 //   print_error("--title")
 // }
-if(!flags.title){
+if(!flags.path){
   print_error("--out-path")
 }
 
@@ -72,7 +73,7 @@ function print_error(flag){
         {red need }{blue ${flag}} {red argument}
   
         options:
-          --ip                     {dim kibana report server ip}
+          --domain                 {dim kibana report server domain}
           --file                   {dim report template file name e.g. template1.html}
           --from                   {dim kibana from date e.g. 2019-06-24T03:39:54.907Z}
           --to                     {dim kibana from date e.g. 2019-06-24T03:54:54.907Z}
@@ -83,9 +84,10 @@ function print_error(flag){
     console.log(
       dedent(chalk`
   
-      example: node index.js --ip=192.168.28.152 --file=template1.html --from=2019-06-24T03:39:54.907Z --to=2019-06-24T03:54:54.907Z --out-path=test2.pdf
+      example: node index.js --domain=https://192.168.28.152:443 --file=template1.html  --from=2019-06-24T03:39:54.907Z --to=2019-06-24T03:54:54.907Z --out-path=test2.pdf
   
       options:
+      --domain                {dim kibana domain e.g. https://192.168.28.152}
       -f or -file             {dim report template file name e.g. template1.html}
       -from                   {dim kibana from date e.g. 2019-06-24T03:39:54.907Z}
       -to                     {dim kibana from date e.g. 2019-06-24T03:54:54.907Z}
@@ -105,14 +107,15 @@ var timeoutObj;
     console.log("-------------------launch--broser-------------------------");
     page = await browser.newPage();
 
-    page.setDefaultTimeout(15000);
+    page.setDefaultTimeout(60000);
     // page.on('console', msg => console.log('PAGE LOG:', msg.text()));
     console.log("before navigate...");
-    const crawler_url = 'https://'+flags.ip+'/'+reportApiUrl+'/'+flags.file+'?'+'index='+flags.index+'&'+
-    "from_date="+flags.from_datetime+"&to_date="+flags.to_datetime+'&title='+flags.title;
-    await page.goto( crawler_url , {waitUntil: 'networkidle2'});
-    // log in
+    const crawler_url = flags.domain+'/'+reportApiUrl+'/'+flags.file+'?'
+    // +'index='+flags.index+'&'+"from_date="+flags.from_datetime+"&to_date="+flags.to_datetime+'&title='+flags.title;
     console.log(crawler_url);
+    await page.goto( crawler_url , {waitUntil: 'networkidle0'});
+    // log in
+    
     console.log("before log in...");
     await page.waitForSelector('[name="username"]');
     await page.type('[name="username"]','elastic');
@@ -123,19 +126,28 @@ var timeoutObj;
       page.waitForNavigation("networkidle0"), // The promise resolves after navigation has finished
       page.click('button'), // Clicking the link will indirectly cause a navigation
     ]);
-    console.log('login in...........');
+    console.log('it has logged in...........');
+
   
     //get main frame and iframe for debug
     let frames =  page.frames();
     console.log("-------------------frames:---------------------------");
     console.log("qty:"+frames.length);
     console.log("-----------------------------------------------------");
-    let mainFrame = frames[0];
-    let iframe = frames[1]
-    console.log("iframe id:"+iframe._name); 
 
-    await iframe.waitForSelector('.dshDashboardViewport-withMargins')
+    //reload iframe with the specified time
+    const timeParam = "&_g=(time:(from:'"+flags.from_datetime+"',mode:absolute,to:'"+flags.to_datetime+"'))";
+    let iframesHandlers = await page.$$('iframe');
     
+    for(let iframeHandler of iframesHandlers){
+      await page.evaluate((iframe,timeParam)=>{
+        console.log("before")
+        console.log(iframe.src)
+        iframe.src += timeParam;
+        console.log("after-------")
+        console.log(iframe.src)
+      },iframeHandler,timeParam);
+    }    
 
     await waitForAjaxRequest(page);
     console.log("Promise.race() has been resolved");
@@ -144,20 +156,24 @@ var timeoutObj;
 
     await page.waitFor(renderTime);
 
-    let filterHandle = await iframe.$('.filter-bar.filter-panel');
-    if(filterHandle){
-      console.log("has filter element")
-       await iframe.evaluate(()=>{
-        //the document is for iframe in browser context
-        //this is in sandbox,so console will not print out directly,need to open line 112 or check in browser dev tool
-        let filters = document.querySelectorAll('.filter-bar.filter-panel');
-        for(let filter of filters){
-          console.log(filter)
-          filter.style.display = 'none'
-        }
-      })
 
+    for(let iframe of frames){
+      let filterHandle = await iframe.$('.filter-bar.filter-panel');
+      if(filterHandle){
+        console.log("has filter element")
+         await iframe.evaluate(()=>{
+          //the document is for iframe in browser context
+          //this is in sandbox,so console will not print out directly,need to open line 112 or check in browser dev tool
+          let filters = document.querySelectorAll('.filter-bar.filter-panel');
+          for(let filter of filters){
+            console.log(filter)
+            filter.style.display = 'none'
+          }
+        })
+      }
     }
+
+    
     await page.pdf({path: flags.path, format: 'A4'});
     console.log("pdf has already been printed out");
     await browser.close();
