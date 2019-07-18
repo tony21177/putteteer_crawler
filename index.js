@@ -6,7 +6,7 @@ const puppeteer = require('puppeteer');
 const { PendingXHR } = require('pending-xhr-puppeteer');
 
 const maxTimeourtForIframeRender = 60000;
-const renderTime = 2000;
+const renderTime = 3000;
 const reportApiUrl = 'report/template';
 const iframeName = 'Dashboard';
 
@@ -199,8 +199,12 @@ var waitForAjaxRequest = (page)=>{
           console.log(pendingXHR.pendingXhrCount());
           console.log(request.url());
           await page.waitForResponse(response => response.url().includes('msearch'),{timeout:60000});
-          await pendingXHR.waitForAllXhrFinished();
-          resolve();
+
+          //put into the next tick so that the next request can be handle beforehand
+          setTimeout(async()=>{
+            await pendingXHR.waitForAllXhrFinished();
+            resolve();
+          },0);
           
         }
       });
