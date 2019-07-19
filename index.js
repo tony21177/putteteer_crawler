@@ -9,6 +9,7 @@ const maxTimeourtForIframeRender = 60000;
 const renderTime = 3000;
 const reportApiUrl = 'report/template';
 const iframeName = 'Dashboard';
+const locale = 'zh-TW';
 
 const unknownFlags = [];
 const flags = getopts(process.argv.slice(2), {
@@ -18,6 +19,7 @@ const flags = getopts(process.argv.slice(2), {
     // index: ['index'],
     from_datetime:['from'],
     to_datetime:['to'],
+    timezone:['timezone'],
     // title:['title'],
     path:['out-path']
   },
@@ -43,6 +45,9 @@ if(!flags.domain){
 }
 if(!flags.file){
   print_error("--file")
+}
+if(!flags.timezone){
+  print_error("--timezone")
 }
 // if(!flags.index){
 //   print_error("--index")
@@ -75,6 +80,7 @@ function print_error(flag){
         options:
           --domain                 {dim kibana report server domain}
           --file                   {dim report template file name e.g. template1.html}
+          --timezone               {dim timezone in report_settings e.g. 'Asia/Taipei'}
           --from                   {dim kibana from date e.g. 2019-06-24T03:39:54.907Z}
           --to                     {dim kibana from date e.g. 2019-06-24T03:54:54.907Z}
           --out-path               {dim output relative path }
@@ -84,11 +90,12 @@ function print_error(flag){
     console.log(
       dedent(chalk`
   
-      example: node index.js --domain=https://192.168.28.152:443 --file=template1.html  --from=2019-06-24T03:39:54.907Z --to=2019-06-24T03:54:54.907Z --out-path=test2.pdf
+      example: node index.js --domain=https://192.168.28.152:443 --file=9e07dde0-a934-11e9-9f12-3b88609bd6fa.html --timezone=Asia/Taipei --from=2019-06-24T03:39:54.907Z --to=2019-06-24T03:54:54.907Z --out-path=test2.pdf
   
       options:
       --domain                {dim kibana domain e.g. https://192.168.28.152}
       -f or -file             {dim report template file name e.g. template1.html}
+      --timezone              {dim timezone in report_settings e.g. 'Asia/Taipei'}
       -from                   {dim kibana from date e.g. 2019-06-24T03:39:54.907Z}
       -to                     {dim kibana from date e.g. 2019-06-24T03:54:54.907Z}
       --out-path              {dim output relative path }
@@ -103,7 +110,7 @@ var timeoutObj;
 (async () => {
   var page;
   try{
-    const browser = await puppeteer.launch({headless:true,args:['--no-sandbox','--ignore-certificate-errors'],timeout:30000});
+    const browser = await puppeteer.launch({headless:false,args:['--no-sandbox','--ignore-certificate-errors'],timeout:30000});
     console.log("-------------------launch--broser-------------------------");
     page = await browser.newPage();
 
@@ -152,9 +159,32 @@ var timeoutObj;
     await waitForAjaxRequest(page);
     console.log("Promise.race() has been resolved");
 
-    
-
     await page.waitFor(renderTime);
+
+    //set time
+    const fromTime = new Date(flags.from_datetime).toLocaleString(locale,{timeZone:flags.timezone});
+    console.log(fromTime)
+    const toTime = new Date(flags.to_datetime).toLocaleString(locale,{timeZone:flags.timezone});
+    console.log(toTime)
+    await page.$$eval('div.ql-editor',(elements,from,to)=>{
+      
+      console.log("------------div.ql-editor--------------")
+      // console.log(elements)
+      // console.log(from);
+      // console.log(to);
+      let stReg = /{ST[^ST{}]*}/g;
+      let etReg = /{ET[^ST{}]*}/g;
+      elements.forEach((ele,index)=>{
+          console.log("--------------------------------")
+          if(ele.innerHTML.match(stReg)){
+            ele.innerHTML = ele.innerHTML.replace(stReg,from);
+          }
+          if(ele.innerHTML.match(etReg)){
+            ele.innerHTML = ele.innerHTML.replace(etReg,to);
+          }
+      });
+    },fromTime,toTime)
+
 
 
     for(let iframe of frames){
