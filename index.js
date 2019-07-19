@@ -110,7 +110,7 @@ var timeoutObj;
 (async () => {
   var page;
   try{
-    const browser = await puppeteer.launch({headless:false,args:['--no-sandbox','--ignore-certificate-errors'],timeout:30000});
+    const browser = await puppeteer.launch({headless:true,args:['--no-sandbox','--ignore-certificate-errors'],timeout:30000});
     console.log("-------------------launch--broser-------------------------");
     page = await browser.newPage();
 
