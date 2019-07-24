@@ -209,6 +209,7 @@ var timeoutObj;
     process.exit(0);
   }catch(e){
     console.error(e);
+    console.log(e);
     await page.pdf({path: flags.path, format: 'A4'});
     process.exit(1);
   }
