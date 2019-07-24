@@ -191,7 +191,7 @@ var timeoutObj;
         console.error("has filter element")
          await iframe.evaluate(()=>{
           //the document is for iframe in browser context
-          //this is in sandbox,so console will not print out directly,need to open line 112 or check in browser dev tool
+          //this is in sandbox,so console will not print out directly,need to open line 121 or check in browser dev tool
           let filters = document.querySelectorAll('.filter-bar.filter-panel');
           for(let filter of filters){
             console.error(filter)
