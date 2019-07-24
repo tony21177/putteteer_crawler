@@ -111,19 +111,22 @@ var timeoutObj;
   var page;
   try{
     const browser = await puppeteer.launch({headless:true,args:['--no-sandbox','--ignore-certificate-errors'],timeout:30000});
-    console.log("-------------------launch--broser-------------------------");
+    console.error("-------------------launch--broser-------------------------");
     page = await browser.newPage();
-
+    await page.setViewport({
+      width: 1500,
+      height:2000
+    });
     page.setDefaultTimeout(60000);
-    // page.on('console', msg => console.log('PAGE LOG:', msg.text()));
-    console.log("before navigate...");
+    page.on('console', msg => console.error('[Browser console LOG]:', msg.text()));
+    console.error("before navigate...");
     const crawler_url = flags.domain+'/'+reportApiUrl+'/'+flags.file+'?'
     // +'index='+flags.index+'&'+"from_date="+flags.from_datetime+"&to_date="+flags.to_datetime+'&title='+flags.title;
-    console.log(crawler_url);
+    console.error(crawler_url);
     await page.goto( crawler_url , {waitUntil: 'networkidle0'});
     // log in
     
-    console.log("before log in...");
+    console.error("before log in...");
     await page.waitForSelector('[name="username"]');
     await page.type('[name="username"]','elastic');
     await page.type('[name="password"]','bara888');
@@ -133,14 +136,12 @@ var timeoutObj;
       page.waitForNavigation("networkidle0"), // The promise resolves after navigation has finished
       page.click('button'), // Clicking the link will indirectly cause a navigation
     ]);
-    console.log('it has logged in...........');
+    console.error('it has logged in...........');
 
   
     //get main frame and iframe for debug
     let frames =  page.frames();
-    console.log("-------------------frames:---------------------------");
-    console.log("qty:"+frames.length);
-    console.log("-----------------------------------------------------");
+    console.error("frames qty:"+frames.length);
 
     //reload iframe with the specified time
     const timeParam = "&_g=(time:(from:'"+flags.from_datetime+"',mode:absolute,to:'"+flags.to_datetime+"'))";
@@ -148,34 +149,31 @@ var timeoutObj;
     
     for(let iframeHandler of iframesHandlers){
       await page.evaluate((iframe,timeParam)=>{
-        console.log("before")
-        console.log(iframe.src)
+        console.error("before")
+        console.error(iframe.src)
         iframe.src += timeParam;
-        console.log("after-------")
-        console.log(iframe.src)
+        console.error("after-------")
+        console.error(iframe.src)
       },iframeHandler,timeParam);
     }    
 
     await waitForAjaxRequest(page);
-    console.log("Promise.race() has been resolved");
+    console.error("Promise.race() has been resolved");
 
     await page.waitFor(renderTime);
 
     //set time
     const fromTime = new Date(flags.from_datetime).toLocaleString(locale,{timeZone:flags.timezone});
-    console.log(fromTime)
+    console.error(fromTime)
     const toTime = new Date(flags.to_datetime).toLocaleString(locale,{timeZone:flags.timezone});
-    console.log(toTime)
+    console.error(toTime)
     await page.$$eval('div.ql-editor',(elements,from,to)=>{
       
-      console.log("------------div.ql-editor--------------")
-      // console.log(elements)
-      // console.log(from);
-      // console.log(to);
+      console.error("------------div.ql-editor--------------")
+      
       let stReg = /{ST[^ST{}]*}/g;
       let etReg = /{ET[^ST{}]*}/g;
       elements.forEach((ele,index)=>{
-          console.log("--------------------------------")
           if(ele.innerHTML.match(stReg)){
             ele.innerHTML = ele.innerHTML.replace(stReg,from);
           }
@@ -190,13 +188,13 @@ var timeoutObj;
     for(let iframe of frames){
       let filterHandle = await iframe.$('.filter-bar.filter-panel');
       if(filterHandle){
-        console.log("has filter element")
+        console.error("has filter element")
          await iframe.evaluate(()=>{
           //the document is for iframe in browser context
           //this is in sandbox,so console will not print out directly,need to open line 112 or check in browser dev tool
           let filters = document.querySelectorAll('.filter-bar.filter-panel');
           for(let filter of filters){
-            console.log(filter)
+            console.error(filter)
             filter.style.display = 'none'
           }
         })
@@ -205,13 +203,12 @@ var timeoutObj;
 
     
     await page.pdf({path: flags.path, format: 'A4'});
-    console.log("pdf has already been printed out");
+    console.error("pdf has already been printed out");
     await browser.close();
-    console.log("Headless browser has already been closed");
+    console.error("Headless browser has already been closed");
     process.exit(0);
   }catch(e){
-    console.log("catch----")
-    console.log(e);
+    console.error(e);
     await page.pdf({path: flags.path, format: 'A4'});
     process.exit(1);
   }
@@ -226,8 +223,8 @@ var waitForAjaxRequest = (page)=>{
       const pendingXHR = new PendingXHR(page);
       page.on('request', async (request) => {
         if (request.resourceType() === 'xhr'&& request.url().includes('msearch')) {
-          console.log(pendingXHR.pendingXhrCount());
-          console.log(request.url());
+          console.error(pendingXHR.pendingXhrCount());
+          console.error(request.url());
           await page.waitForResponse(response => response.url().includes('msearch'),{timeout:60000});
 
           //put into the next tick so that the next request can be handle beforehand
@@ -247,12 +244,12 @@ var waitForAjaxRequest = (page)=>{
   function iframeRenderMaxTimeout(delay){
     var timeoutPromise = new Promise( (resolve,reject)=>{
       timeoutObj=setTimeout( ()=>{
-                              console.log("no ajax request finished for "+delay/1000+"s");
-                              reject( "no ajax request finished for "+delay/1000+"s" );
+                              console.error("no ajax request finished for "+delay/1000+"s");
+                              reject( new Error("retrieving data of dashboard expired for "+delay/1000+"s") );
                             }, delay );
       
       } );
-      console.log("setting timeout for "+delay/1000+"s");
+      console.error("setting timeout for "+delay/1000+"s");
 
     return {
       timeoutObj:timeoutObj,
