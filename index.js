@@ -5,6 +5,7 @@ const chalk = require('chalk');
 const puppeteer = require('puppeteer');
 const { PendingXHR } = require('pending-xhr-puppeteer');
 
+const defaultTimeout = 120000
 const maxTimeourtForIframeRender = 60000;
 const renderTime = 3000;
 const reportApiUrl = 'report/template';
@@ -110,14 +111,14 @@ var timeoutObj;
 (async () => {
   var page;
   try{
-    const browser = await puppeteer.launch({headless:true,args:['--no-sandbox','--ignore-certificate-errors'],timeout:30000});
+    const browser = await puppeteer.launch({headless:true,args:['--no-sandbox','--ignore-certificate-errors'],timeout:defaultTimeout});
     console.error("-------------------launch--broser-------------------------");
     page = await browser.newPage();
     await page.setViewport({
       width: 1500,
       height:2000
     });
-    page.setDefaultTimeout(60000);
+    page.setDefaultTimeout(defaultTimeout);
     page.on('console', msg => console.error('[Browser console LOG]:', msg.text()));
     console.error("before navigate...");
     const crawler_url = flags.domain+'/'+reportApiUrl+'/'+flags.file+'?'
