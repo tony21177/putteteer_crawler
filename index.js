@@ -137,6 +137,10 @@ var timeoutObj;
       page.click('button'), // Clicking the link will indirectly cause a navigation
     ]);
     console.error('it has logged in...........');
+    console.error(response.status());
+    if(response.status()==404){
+      throw new Error("Report template does not exist!")
+    }
 
   
     //get main frame and iframe for debug
@@ -146,6 +150,16 @@ var timeoutObj;
     //reload iframe with the specified time
     const timeParam = "&_g=(time:(from:'"+flags.from_datetime+"',mode:absolute,to:'"+flags.to_datetime+"'))";
     let iframesHandlers = await page.$$('iframe');
+    let firstIframe = await iframesHandlers[0].contentFrame();
+
+    const iframDomain = firstIframe.url().split('/')[2];
+    const crawlerDomain = flags.domain.split('/')[2].split(':')[0]
+    console.error("iframe domain "+iframDomain);
+    console.error("crawler domain :"+crawlerDomain);
+    if(iframDomain!=crawlerDomain){
+      throw new Error("Domain is not correct!")
+    }
+    
     
     for(let iframeHandler of iframesHandlers){
       await page.evaluate((iframe,timeParam)=>{
