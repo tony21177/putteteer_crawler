@@ -164,11 +164,11 @@ var timeoutObj;
     
     for(let iframeHandler of iframesHandlers){
       await page.evaluate((iframe,timeParam)=>{
-        console.error("before")
-        console.error(iframe.src)
-        iframe.src += timeParam;
-        console.error("after-------")
-        console.error(iframe.src)
+        console.log("before")
+        console.log(iframe.src)
+        iframe.src = iframe.src.split('&')[0]+timeParam;
+        console.log("after-------")
+        console.log(iframe.src)
       },iframeHandler,timeParam);
     }    
 
@@ -184,7 +184,7 @@ var timeoutObj;
     console.error(toTime)
     await page.$$eval('div.ql-editor',(elements,from,to)=>{
       
-      console.error("------------div.ql-editor--------------")
+      // console.log("------------div.ql-editor--------------")
       
       let stReg = /{ST[^ST{}]*}/g;
       let etReg = /{ET[^ST{}]*}/g;
@@ -209,7 +209,7 @@ var timeoutObj;
           //this is in sandbox,so console will not print out directly,need to open line 121 or check in browser dev tool
           let filters = document.querySelectorAll('.filter-bar.filter-panel');
           for(let filter of filters){
-            console.error(filter)
+            // console.log(filter)
             filter.style.display = 'none'
           }
         })
