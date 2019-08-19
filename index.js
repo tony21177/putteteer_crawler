@@ -6,7 +6,6 @@ const puppeteer = require('puppeteer');
 const { PendingXHR } = require('pending-xhr-puppeteer');
 
 const defaultTimeout = 120000
-const maxTimeourtForIframeRender = 60000;
 const renderTime = 3000;
 const reportApiUrl = 'report/template';
 const iframeName = 'Dashboard';
@@ -22,7 +21,8 @@ const flags = getopts(process.argv.slice(2), {
     to_datetime:['to'],
     timezone:['timezone'],
     // title:['title'],
-    path:['out-path']
+    path:['out-path'],
+    esTimeout:['esTimeout']
   },
   default: {
     debug: true
@@ -65,11 +65,14 @@ if(!flags.to_datetime){
 if(!flags.path){
   print_error("--out-path")
 }
-
-
+if(!flags.esTimeout){
+  print_error("--esTimeout")
+}
 if (flags.help) {
   print_error();
 }
+
+
 
 function print_error(flag){
   if(flag){
@@ -79,7 +82,8 @@ function print_error(flag){
         {red need }{blue ${flag}} {red argument}
   
         options:
-          --domain                 {dim kibana report server domain}
+          --esTimeout=30000        {dim dashboard waiting timeout,it should be same with elasticsearch.requestTimeout in kibana.yml}
+          --domain                 {dim kibana domain e.g. https://192.168.28.152}
           --file                   {dim report template file name e.g. template1.html}
           --timezone               {dim timezone in report_settings e.g. 'Asia/Taipei'}
           --from                   {dim kibana from date e.g. 2019-06-24T03:39:54.907Z}
@@ -91,9 +95,10 @@ function print_error(flag){
     console.log(
       dedent(chalk`
   
-      example: node index.js --domain=https://192.168.28.152:443 --file=9e07dde0-a934-11e9-9f12-3b88609bd6fa.html --timezone=Asia/Taipei --from=2019-06-24T03:39:54.907Z --to=2019-06-24T03:54:54.907Z --out-path=test2.pdf
+      example: node index.js --esTimeout=30000 --domain=https://192.168.28.152:443 --file=9e07dde0-a934-11e9-9f12-3b88609bd6fa.html --timezone=Asia/Taipei --from=2019-06-24T03:39:54.907Z --to=2019-06-24T03:54:54.907Z --out-path=test2.pdf
   
       options:
+      --esTimeout=30000       {dim dashboard waiting timeout,it should be same with elasticsearch.requestTimeout in kibana.yml}
       --domain                {dim kibana domain e.g. https://192.168.28.152}
       -f or -file             {dim report template file name e.g. template1.html}
       --timezone              {dim timezone in report_settings e.g. 'Asia/Taipei'}
@@ -108,6 +113,8 @@ function print_error(flag){
 }
 
 var timeoutObj;
+
+
 (async () => {
   var page;
   try{
@@ -231,7 +238,7 @@ var timeoutObj;
 })();
 
 var waitForAjaxRequest = (page)=>{
-  return Promise.race([iframeRenderMaxTimeout(maxTimeourtForIframeRender).timeoutPromise,ajaxForESData()]);
+  return Promise.race([iframeRenderMaxTimeout(flags.esTimeout).timeoutPromise,ajaxForESData()]);
 
   //proxy ajax for msearch elasticsearch request
   function ajaxForESData(){
@@ -241,7 +248,7 @@ var waitForAjaxRequest = (page)=>{
         if (request.resourceType() === 'xhr'&& request.url().includes('msearch')) {
           console.error(pendingXHR.pendingXhrCount());
           console.error(request.url());
-          await page.waitForResponse(response => response.url().includes('msearch'),{timeout:60000});
+          await page.waitForResponse(response => response.url().includes('msearch'),{timeout:flags.esTimeout});
 
           //put into the next tick so that the next request can be handle beforehand
           setTimeout(async()=>{
@@ -260,7 +267,7 @@ var waitForAjaxRequest = (page)=>{
   function iframeRenderMaxTimeout(delay){
     var timeoutPromise = new Promise( (resolve,reject)=>{
       timeoutObj=setTimeout( ()=>{
-                              console.error("no ajax request finished for "+delay/1000+"s");
+                              console.error("retrieving data of dashboard expired for "+delay/1000+"s");
                               reject( new Error("retrieving data of dashboard expired for "+delay/1000+"s") );
                             }, delay );
       
