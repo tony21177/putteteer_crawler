@@ -158,29 +158,36 @@ var timeoutObj;
     //reload iframe with the specified time
     const timeParam = "&_g=(time:(from:'"+flags.from_datetime+"',mode:absolute,to:'"+flags.to_datetime+"'))";
     let iframesHandlers = await page.$$('iframe');
-    let firstIframe = await iframesHandlers[0].contentFrame();
 
-    const iframDomain = firstIframe.url().split('/')[2];
-    const crawlerDomain = flags.domain.split('/')[2].split(':')[0]
-    console.error("iframe domain "+iframDomain);
-    console.error("crawler domain :"+crawlerDomain);
-    if(iframDomain!=crawlerDomain){
-      throw new Error("Domain is not correct!")
+    console.log(iframesHandlers);
+
+    if(iframesHandlers.length!=0){
+      let firstIframe = await iframesHandlers[0].contentFrame();
+
+      const iframDomain = firstIframe.url().split('/')[2];
+      const crawlerDomain = flags.domain.split('/')[2].split(':')[0]
+      console.error("iframe domain "+iframDomain);
+      console.error("crawler domain :"+crawlerDomain);
+      if(iframDomain!=crawlerDomain){
+        throw new Error("Domain is not correct!")
+      }
+      
+      
+      for(let iframeHandler of iframesHandlers){
+        await page.evaluate((iframe,timeParam)=>{
+          console.log("before")
+          console.log(iframe.src)
+          iframe.src = iframe.src.split('&')[0]+timeParam;
+          console.log("after-------")
+          console.log(iframe.src)
+        },iframeHandler,timeParam);
+      }    
+    
+      await waitForAjaxRequest(page);
+      console.error("Promise.race() has been resolved");
+    }else{
+      console.error("no kibana iframes");
     }
-    
-    
-    for(let iframeHandler of iframesHandlers){
-      await page.evaluate((iframe,timeParam)=>{
-        console.log("before")
-        console.log(iframe.src)
-        iframe.src = iframe.src.split('&')[0]+timeParam;
-        console.log("after-------")
-        console.log(iframe.src)
-      },iframeHandler,timeParam);
-    }    
-
-    await waitForAjaxRequest(page);
-    console.error("Promise.race() has been resolved");
 
     await page.waitFor(renderTime);
 
