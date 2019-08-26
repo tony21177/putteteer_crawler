@@ -159,7 +159,6 @@ var timeoutObj;
     const timeParam = "&_g=(time:(from:'"+flags.from_datetime+"',mode:absolute,to:'"+flags.to_datetime+"'))";
     let iframesHandlers = await page.$$('iframe');
 
-    console.log(iframesHandlers);
 
     if(iframesHandlers.length!=0){
       let firstIframe = await iframesHandlers[0].contentFrame();
