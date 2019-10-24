@@ -22,7 +22,9 @@ const flags = getopts(process.argv.slice(2), {
     timezone:['timezone'],
     // title:['title'],
     path:['out-path'],
-    esTimeout:['esTimeout']
+    esTimeout:['esTimeout'],
+    account:['account'],
+    password:['password']
   },
   default: {
     debug: true
@@ -68,6 +70,12 @@ if(!flags.path){
 if(!flags.esTimeout){
   print_error("--esTimeout")
 }
+if(!flags.account){
+  print_error("--account")
+}
+if(!flags.password){
+  print_error("--password")
+}
 if (flags.help) {
   print_error();
 }
@@ -89,13 +97,15 @@ function print_error(flag){
           --from                   {dim kibana from date e.g. 2019-06-24T03:39:54.907Z}
           --to                     {dim kibana from date e.g. 2019-06-24T03:54:54.907Z}
           --out-path               {dim output relative path }
+          --account                {dim login account }
+          --password               {dim login password }
       `) + '\n'
     );
   }else{
     console.log(
       dedent(chalk`
   
-      example: node index.js --esTimeout=30000 --domain=https://192.168.28.152:443 --file=9e07dde0-a934-11e9-9f12-3b88609bd6fa.html --timezone=Asia/Taipei --from=2019-06-24T03:39:54.907Z --to=2019-06-24T03:54:54.907Z --out-path=test2.pdf
+      example: node index.js --account=admin --password=admin --esTimeout=30000 --domain=https://192.168.28.152:443 --file=9e07dde0-a934-11e9-9f12-3b88609bd6fa.html --timezone=Asia/Taipei --from=2019-06-24T03:39:54.907Z --to=2019-06-24T03:54:54.907Z --out-path=test2.pdf
   
       options:
       --esTimeout=30000       {dim dashboard waiting timeout,it should be same with elasticsearch.requestTimeout in kibana.yml}
@@ -105,6 +115,8 @@ function print_error(flag){
       -from                   {dim kibana from date e.g. 2019-06-24T03:39:54.907Z}
       -to                     {dim kibana from date e.g. 2019-06-24T03:54:54.907Z}
       --out-path              {dim output relative path }
+      --account                {dim login account }
+      --password               {dim login password }     
       `) + '\n'
     );
   }
@@ -136,8 +148,8 @@ var timeoutObj;
     
     console.error("before log in...");
     await page.waitForSelector('[name="username"]');
-    await page.type('[name="username"]','elastic');
-    await page.type('[name="password"]','bara888');
+    await page.type('[name="username"]',flags.account);
+    await page.type('[name="password"]',flags.password);
  
 
     const [response] = await Promise.all([
