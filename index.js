@@ -169,6 +169,7 @@ var timeoutObj;
 
     //reload iframe with the specified time
     const timeParam = "&_g=(time:(from:'"+flags.from_datetime+"',mode:absolute,to:'"+flags.to_datetime+"'))";
+    const domain = flags.domain;
     let iframesHandlers = await page.$$('iframe');
 
 
@@ -179,19 +180,21 @@ var timeoutObj;
       const crawlerDomain = flags.domain.split('/')[2].split(':')[0]
       console.error("iframe domain "+iframDomain);
       console.error("crawler domain :"+crawlerDomain);
-      if(iframDomain!=crawlerDomain){
-        throw new Error("Domain is not correct!")
-      }
+      // if(iframDomain!=crawlerDomain){
+      //   throw new Error("Domain is not correct!")
+      // }
       
       
       for(let iframeHandler of iframesHandlers){
-        await page.evaluate((iframe,timeParam)=>{
+        await page.evaluate((iframe,timeParam,domain)=>{
           console.log("before")
           console.log(iframe.src)
-          iframe.src = iframe.src.split('&')[0]+timeParam;
+          //change iframe domain
+          iframe.src = domain+"/app"+iframe.src.split('&')[0].split("app")[1]+timeParam
+          // iframe.src = iframe.src.split('&')[0]+timeParam;
           console.log("after-------")
           console.log(iframe.src)
-        },iframeHandler,timeParam);
+        },iframeHandler,timeParam,domain);
       }    
     
       await waitForAjaxRequest(page);
